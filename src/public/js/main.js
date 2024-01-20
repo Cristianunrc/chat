@@ -15,7 +15,6 @@ $(function () {
   const $nickForm = $('#nickForm')
   const $nickName = $('#nickName')
 
-
   $nickForm.submit( e => {
     e.preventDefault()
     socket.emit('new user', $nickName.val(), data => {
@@ -36,7 +35,9 @@ $(function () {
   // events
   $messageForm.submit( e => {
     e.preventDefault()
-    socket.emit('send message', $message.val())
+    socket.emit('send message', $message.val(), data => {
+      $chat.append(`<p class="error">${data}</p>`)
+    })
     $message.val('')
   })
 
@@ -50,6 +51,10 @@ $(function () {
       html += `<p><i class="fas fa-user"></i> ${data[i]}</p>`
     }
     $user.html(html)
+  })
+
+  socket.on('whisper', data => {
+    $chat.append(`<p class="whisper"><b>${data.nick}:</b> ${data.msg}</p>`)
   })
 
 })
