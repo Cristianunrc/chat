@@ -1,12 +1,16 @@
 // web socket Server connection 
+const Chat = require('./models/Chat')
 
 module.exports = function (io) {
   
   let users = {}
   
   // web socket connection
-  io.on('connection', socket => {
+  io.on('connection', async socket => {
     console.log('new user connected')
+
+    let messages = await Chat.find({}).limit(8)
+    socket.emit('load old msgs', messages)
 
     socket.on('new user', (data, cb) => {
       if (data in users) {
@@ -19,7 +23,7 @@ module.exports = function (io) {
       }
     })
 
-    socket.on('send message', (data, cb) => {
+    socket.on('send message', async (data, cb) => {
       
       var msg = data.trim()
       
@@ -32,7 +36,7 @@ module.exports = function (io) {
           var msg = msg.substr(index + 1)
           if (name in users) {
             users[name].emit('whisper', {
-              msg,
+              msg, // msg: msg
               nick: socket.nickName
             })
           } else {
@@ -42,7 +46,13 @@ module.exports = function (io) {
           cb('Error! Please enter your message')
         }
       } else {
-        // Validates general message
+        // storage dates in db
+        var newMsg = new Chat({
+          msg,
+          nick: socket.nickName
+        })
+        await newMsg.save()
+        
         io.sockets.emit('new message', {
           msg: data,
           nick: socket.nickName
